@@ -17,7 +17,6 @@ import { OtpService } from './otp.service';
 import { SignupDto } from './dto/signup.dto';
 import { UsersService } from 'src/users/users.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { ReSendOtpDto } from './dto/re-send-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { VerifyForgotPasswordDto } from './dto/verify-forgot-password';
 import { TokenService } from './token.service';
@@ -61,7 +60,6 @@ export class AuthController {
     });
     return { message: 'Logged out successfully' };
   }
-  @Public()
   @UseGuards(AuthGuard('jwt-refresh'))
   @Post('refresh')
   async refresh(
@@ -82,20 +80,16 @@ export class AuthController {
   @Public()
   @Post('signup')
   async signup(@Body() signupDto: SignupDto) {
-    await this.authService.signup(signupDto);
+    return this.authService.signup(signupDto);
   }
   @Public()
-  @Post('verify-otp')
+  @Post('verify-registration')
   async verifyOtp(@Body() signupDto: SignupDto) {
     await this.otpService.trackVerifyOtp(signupDto.email);
     await this.otpService.verifyOtp(signupDto.otp, signupDto.email);
     await this.usersService.create(signupDto);
-  }
-  @Public()
-  @Post('resend-otp')
-  async resendOtp(@Body() { email, name }: ReSendOtpDto) {
-    await this.otpService.trackSendOtp(email);
-    await this.otpService.sendOtp(email, name, 'send-otp', 'Your OTP Code');
+
+    return { message: 'Registration verified' };
   }
   @Public()
   @Post('forgot-password')
@@ -109,6 +103,8 @@ export class AuthController {
       'forgot-password',
       'Your OTP Code for Password Reset',
     );
+
+    return { message: 'Reset code sent' };
   }
   @Public()
   @Post('verify-forgot-password')
@@ -116,5 +112,7 @@ export class AuthController {
     @Body() { email, otp, newPassword }: VerifyForgotPasswordDto,
   ) {
     await this.authService.verifyForgotPassword({ email, otp, newPassword });
+
+    return { message: 'Password reset successful' };
   }
 }

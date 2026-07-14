@@ -52,15 +52,17 @@ export class AuthService {
       'send-otp',
       'Your OTP Code',
     );
+
+    return { message: 'OTP sent to your email' };
   }
   async verifyForgotPassword({
     email,
     otp,
     newPassword,
   }: VerifyForgotPasswordDto) {
+    await this.otpService.trackVerifyOtp(email);
     const user = await this.usersService.findOne(email);
     await this.otpService.verifyOtp(otp, email);
-    await this.otpService.trackVerifyOtp(email);
-    await this.usersService.update(user!.id, { password: newPassword });
+    await this.usersService.update(user!.id, { passwordHash: newPassword });
   }
 }

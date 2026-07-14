@@ -1,17 +1,32 @@
-import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { RedisService } from 'src/redis/redis.service';
-import { Resend } from 'resend';
 import path from 'path';
 import ejs from 'ejs';
 import crypto from 'crypto';
+import nodemailer, { type Transporter } from 'nodemailer';
 
 @Injectable()
 export class OtpService implements OnModuleInit {
-  private resend!: Resend;
+  private transporter!: Transporter;
   constructor(private readonly redisService: RedisService) {}
-  onModuleInit() {
-    // Instantiate Resend once when the module loads
-    this.resend = new Resend(process.env.RESEND_API_KEY);
+
+  async onModuleInit() {
+    this.transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 465),
+      secure: true,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    await this.transporter.verify();
   }
   renderTemplate(templateName: string, data: Record<string, string>) {
     const templatePath = path.resolve(
@@ -32,10 +47,10 @@ export class OtpService implements OnModuleInit {
   ) {
     const otp = crypto.randomBytes(3).toString('hex');
     try {
-      await this.resend.emails.send({
-        from: 'Dis Team <onboarding@resend.dev>',
-        to: [email],
-        subject: subject,
+      await this.transporter.sendMail({
+        from: `Dis Team <${process.env.SMTP_USER}>`,
+        to: email,
+        subject,
         html: await this.renderTemplate(templateName, { name, otp }),
       });
       await this.redisService.set(`otp:${email}`, otp, {
@@ -46,6 +61,9 @@ export class OtpService implements OnModuleInit {
       });
     } catch (error) {
       console.error('Error sending OTP email:', error);
+      throw new InternalServerErrorException(
+        'Failed to send OTP email. Please try again later.',
+      );
     }
   }
 

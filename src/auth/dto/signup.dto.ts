@@ -11,7 +11,7 @@ export class SignupDto {
   email!: string;
   @IsString()
   @IsNotEmpty()
-  password!: string;
+  passwordHash!: string;
   @IsString()
   @IsOptional()
   otp!: string;
