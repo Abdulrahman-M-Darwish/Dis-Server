@@ -6,11 +6,15 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
+  Request,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DeleteResult } from 'mongoose';
+import { SearchUsersDto } from './dto/search-users.dto';
+import type { Request as RequestT } from 'express';
 
 @Controller('users')
 export class UsersController {
@@ -21,14 +25,23 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  // @Get()
-  // findAll() {
-  //   return this.usersService.findAll();
-  // }
+  @Get()
+  findAll(
+    @Request() req: RequestT & { user: { userId: string } },
+    @Query() searchUsersDto: SearchUsersDto,
+  ) {
+    return this.usersService.findAll(req.user.userId, searchUsersDto);
+  }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  findOne(
+    @Param('id') id: string,
+    @Request() req: RequestT & { user: { userId: string } },
+  ) {
+    return this.usersService.findOne(
+      id === 'me' ? req.user.userId : id,
+      req.user.userId,
+    );
   }
 
   @Patch(':id')

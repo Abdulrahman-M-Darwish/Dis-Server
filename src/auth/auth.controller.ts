@@ -18,11 +18,10 @@ import { SignupDto } from './dto/signup.dto';
 import { UsersService } from 'src/users/users.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { VerifyForgotPasswordDto } from './dto/verify-forgot-password';
+import { VerifyForgotPasswordDto } from './dto/verify-forgot-password.dto';
 import { TokenService } from './token.service';
 
 @Controller('auth')
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 @UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(
@@ -60,6 +59,7 @@ export class AuthController {
     });
     return { message: 'Logged out successfully' };
   }
+  @Public()
   @UseGuards(AuthGuard('jwt-refresh'))
   @Post('refresh')
   async refresh(

@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from 'src/users/users.module';
-import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth.guard';
 import { TokenService } from './token.service';
@@ -12,11 +11,7 @@ import { RedisModule } from 'src/redis/redis.module';
 import { OtpService } from './otp.service';
 
 @Module({
-  imports: [
-    UsersModule,
-    JwtModule.register({ secret: process.env.JWT_SECRET }),
-    RedisModule,
-  ],
+  imports: [UsersModule, RedisModule],
   controllers: [AuthController],
   providers: [
     AuthService,

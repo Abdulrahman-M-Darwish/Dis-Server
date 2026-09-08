@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
@@ -37,6 +35,12 @@ export class JwtRefreshStrategy extends PassportStrategy(
       !refreshToken ||
       !(await this.tokenService.isTokenValid(payload.sub, refreshToken))
     ) {
+      req?.res?.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+      });
+      await this.tokenService.revokeRefreshToken(payload.sub);
       throw new UnauthorizedException('Invalid refresh token');
     }
 

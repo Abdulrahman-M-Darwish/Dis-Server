@@ -4,8 +4,6 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { UsersService } from '../users/users.service';
-import { ServersService } from '../servers/servers.service';
-import { servers } from './servers';
 import { UserDocument } from '../users/entities/user.entity';
 
 const seed = async () => {
@@ -28,17 +26,6 @@ const seed = async () => {
   for (const u of users) {
     const user = await usersService.create(u);
     createdUsers.push(user);
-  }
-
-  const serversService = app.get(ServersService);
-  for (const s of servers) {
-    const randomUserIndex = Math.floor(
-      Math.random() * (createdUsers.length - 1),
-    );
-    await serversService.create({
-      ...s,
-      ownerId: createdUsers[randomUserIndex]._id as unknown as string,
-    });
   }
 
   console.log('Database seeded successfully.');

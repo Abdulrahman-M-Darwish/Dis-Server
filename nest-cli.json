@@ -7,7 +7,7 @@
     "assets": [
       {
         "include": "constants/**/*.ejs",
-        "outDir": "dist"
+        "outDir": "dist/src"
       }
     ],
     "watchAssets": true

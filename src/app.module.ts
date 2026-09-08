@@ -2,29 +2,35 @@ import { Module } from '@nestjs/common';
 import { UsersModule } from './users/users.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import 'dotenv/config';
-import { ServersModule } from './servers/servers.module';
-import { MembersModule } from './members/members.module';
-import { ChannelsModule } from './channels/channels.module';
-import { RolesModule } from './roles/roles.module';
 import { AuthModule } from './auth/auth.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ConversationsModule } from './conversations/conversations.module';
+import { MessagesModule } from './messages/messages.module';
+import { FriendsModule } from './friends/friends.module';
+import { AppGateway } from './app.gateway';
+import { JwtModule } from '@nestjs/jwt';
+import { ScheduleModule } from '@nestjs/schedule';
+import { PresenceModule } from './presence/presence.module';
 
 @Module({
   imports: [
     MongooseModule.forRoot(process.env.MONGODB_URI!),
+    JwtModule.register({ secret: process.env.JWT_SECRET, global: true }),
+    ScheduleModule.forRoot(),
     UsersModule,
-    ServersModule,
-    MembersModule,
-    ChannelsModule,
-    RolesModule,
     AuthModule,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute
         limit: 5, // Max 5 requests per IP address total across endpoints
       },
     ]),
+    ConversationsModule,
+    MessagesModule,
+    FriendsModule,
+    PresenceModule,
   ],
+  providers: [AppGateway],
+  exports: [AppGateway],
 })
 export class AppModule {}
