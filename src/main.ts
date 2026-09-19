@@ -10,13 +10,23 @@ class RedisIoAdapter extends IoAdapter {
   private adapterConstructor!: ReturnType<typeof createAdapter>;
 
   async connectToRedis() {
-    const pubClient = createClient({
-      socket: {
-        host: process.env.REDIS_HOST,
-        port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
-      },
-    });
+    const pubClient = createClient(
+      process.env.REDIS_URL
+        ? { url: process.env.REDIS_URL }
+        : {
+            socket: {
+              host: process.env.REDIS_HOST,
+              port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
+            },
+          },
+    );
     const subClient = pubClient.duplicate();
+    pubClient.on('error', (error) => {
+      console.error('Redis pub client error:', error);
+    });
+    subClient.on('error', (error) => {
+      console.error('Redis sub client error:', error);
+    });
     await pubClient.connect();
     await subClient.connect();
 

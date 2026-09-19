@@ -7,11 +7,18 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly TTL_MS = 120000; // Sockets expire if no heartbeat for 120s
 
   constructor() {
-    this.client = createClient({
-      socket: {
-        host: process.env.REDIS_HOST,
-        port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
-      },
+    this.client = createClient(
+      process.env.REDIS_URL
+        ? { url: process.env.REDIS_URL }
+        : {
+            socket: {
+              host: process.env.REDIS_HOST,
+              port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
+            },
+          },
+    );
+    this.client.on('error', (error) => {
+      console.error('Redis client error:', error);
     });
   }
 
