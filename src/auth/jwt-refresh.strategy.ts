@@ -38,7 +38,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
       req?.res?.clearCookie('refreshToken', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
       });
       await this.tokenService.revokeRefreshToken(payload.sub);
       throw new UnauthorizedException('Invalid refresh token');

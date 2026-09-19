@@ -7,6 +7,7 @@ export class SignupDto {
   @IsString()
   @IsNotEmpty()
   name!: string;
+  @IsNotEmpty()
   @IsEmail()
   email!: string;
   @IsString()
@@ -14,5 +15,5 @@ export class SignupDto {
   passwordHash!: string;
   @IsString()
   @IsOptional()
-  otp!: string;
+  otp?: string;
 }

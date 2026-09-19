@@ -8,7 +8,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { DefaultEventsMap, Server, Socket } from 'socket.io';
 import { RedisService } from './redis/redis.service';
 import { UsersService } from './users/users.service';
 import { UserStatus } from './users/entities/user.entity';
@@ -16,13 +16,19 @@ import { JwtService } from '@nestjs/jwt';
 import { UseGuards } from '@nestjs/common';
 import { WsJwtGuard } from './guards/ws-jwt.guard';
 
-type AuthenticatedSocket = Socket & {
-  data: {
+export type AuthenticatedSocket = Socket<
+  DefaultEventsMap,
+  DefaultEventsMap,
+  DefaultEventsMap,
+  {
+    [x: string]: any;
+    activeConversationId?: string;
+    conversationTransitionId?: number;
     user: {
       userId: string;
     };
-  };
-};
+  }
+>;
 
 @UseGuards(WsJwtGuard)
 @WebSocketGateway({

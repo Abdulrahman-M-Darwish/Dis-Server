@@ -8,7 +8,11 @@ export class Attachment {
   fileType!: 'image' | 'video' | 'file';
 }
 
-@Schema({ timestamps: true })
+@Schema({
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+})
 export class Message {
   _id!: string;
   @Prop({
@@ -19,9 +23,9 @@ export class Message {
   conversationId!: Conversation | string;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
-  senderId!: User | string;
+  senderId!: string;
 
-  @Prop({ required: true, trim: true, default: null })
+  @Prop({ trim: true, default: null })
   text?: string;
 
   @Prop({ default: [] })
@@ -44,6 +48,10 @@ export class Message {
   @Prop({ default: false })
   isForwarded!: boolean;
 
+  @Prop({ default: false })
+  isSystem!: boolean;
+
+  sender!: User;
   createdAt!: Date;
   updatedAt!: Date;
 }
@@ -52,4 +60,11 @@ export const messagesSchema = SchemaFactory.createForClass(Message);
 
 // Performance Indexes: Highly crucial for chat apps!
 // Indexing conversationId and _id ensures lightning-fast pagination of chat history.
-messagesSchema.index({ conversationId: 1, _id: -1 });
+messagesSchema.index({ conversationId: 1, _id: -1, createdAt: 1 });
+
+messagesSchema.virtual('sender', {
+  ref: 'User',
+  localField: 'senderId',
+  foreignField: '_id',
+  justOne: true,
+});

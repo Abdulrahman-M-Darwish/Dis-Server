@@ -70,7 +70,7 @@ export class UsersService {
       .find(query)
       .sort({ _id: 1 })
       .limit(limit)
-      .select('-passwordHash')
+      .select('_id name username avatarUrl')
       .lean(); // .lean() returns plain JS objects so we can easily attach properties
 
     if (!users.length) return [];
@@ -136,13 +136,13 @@ export class UsersService {
   }
 
   async findOne(id: string, currentUserId?: string) {
-    // idk why i get error when i put _id in the $or with email and name so i separated it
     const user = await this.userModel
       .findOne(
         mongoose.Types.ObjectId.isValid(id)
           ? { _id: id }
           : { $or: [{ email: id }, { name: id }] },
       )
+      .select({ passwordHash: 0 })
       .lean();
     if (currentUserId && currentUserId !== id) {
       const request = await this.friendRequestModel.findOne({
@@ -170,6 +170,13 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async findOneForLogin(email: string) {
+    return await this.userModel
+      .findOne({ email })
+      .select('_id passwordHash')
+      .lean();
   }
 
   async findByIdWithFriends(id: string) {

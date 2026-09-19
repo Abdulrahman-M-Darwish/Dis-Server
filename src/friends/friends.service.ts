@@ -14,7 +14,11 @@ import {
   FriendRequestStatus,
 } from './entities/friend.entity';
 import { ConversationsService } from 'src/conversations/conversations.service';
-import { ConversationType } from 'src/conversations/entities/conversation.entity';
+import {
+  Conversation,
+  ConversationType,
+} from 'src/conversations/entities/conversation.entity';
+import { FriendsGateway } from './friends.gateway';
 
 @Injectable()
 export class FriendsService {
@@ -23,7 +27,10 @@ export class FriendsService {
     private friendRequestModel: Model<FriendRequestDocument>,
     @InjectModel(User.name)
     private userModel: Model<UserDocument>,
+    @InjectModel(Conversation.name)
+    private conversationModel: Model<Conversation>,
     private readonly conversationsService: ConversationsService,
+    private readonly friendsGateway: FriendsGateway,
   ) {}
 
   // 1. Send Friend Request
@@ -36,6 +43,11 @@ export class FriendsService {
 
     const receiver = await this.userModel.findById(receiverId);
     if (!receiver) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const sender = await this.userModel.findById(senderId);
+    if (!sender) {
       throw new NotFoundException('User not found.');
     }
 
@@ -60,14 +72,29 @@ export class FriendsService {
       existingRequest.sender = new Types.ObjectId(senderId);
       existingRequest.receiver = new Types.ObjectId(receiverId);
       existingRequest.status = FriendRequestStatus.PENDING;
-      return existingRequest.save();
+      const savedRequest = await existingRequest.save();
+      this.friendsGateway.sendFriendRequest(
+        senderId,
+        receiverId,
+        savedRequest._id.toString(),
+        sender,
+        receiver,
+      );
+      return savedRequest;
     }
-
-    return this.friendRequestModel.create({
+    const createdRequest = await this.friendRequestModel.create({
       sender: senderId,
       receiver: receiverId,
       status: FriendRequestStatus.PENDING,
     });
+    this.friendsGateway.sendFriendRequest(
+      senderId,
+      receiverId,
+      createdRequest._id.toString(),
+      sender,
+      receiver,
+    );
+    return createdRequest;
   }
 
   // 2. Accept Friend Request
@@ -77,7 +104,7 @@ export class FriendsService {
       throw new NotFoundException('Friend request not found.');
     }
 
-    if (request.receiver.toString() !== userId) {
+    if ((request.receiver as Types.ObjectId).toString() !== userId) {
       throw new BadRequestException(
         'You are not authorized to accept this request.',
       );
@@ -89,21 +116,30 @@ export class FriendsService {
 
     // Update status to ACCEPTED
     request.status = FriendRequestStatus.ACCEPTED;
-    await request.save();
+    const newRequest = await request.save();
 
     // Add each other to friends array
-    await this.userModel.findByIdAndUpdate(request.sender, {
+    const sender = await this.userModel.findByIdAndUpdate(request.sender, {
       $addToSet: { friends: request.receiver },
     });
-    await this.userModel.findByIdAndUpdate(request.receiver, {
+    const receiver = await this.userModel.findByIdAndUpdate(request.receiver, {
       $addToSet: { friends: request.sender },
     });
-    await this.conversationsService.create({
-      participants: [request.receiver.toString(), request.sender.toString()],
+    const conversation = await this.conversationsService.create({
+      participants: [
+        (request.receiver as Types.ObjectId).toString(),
+        (request.sender as Types.ObjectId).toString(),
+      ],
       type: ConversationType.PRIVATE,
     });
+    this.friendsGateway.acceptFriendRequest(
+      sender!,
+      receiver!,
+      newRequest._id.toString(),
+      conversation as Conversation,
+    );
 
-    return { message: 'Friend request accepted successfully.' };
+    return newRequest;
   }
 
   // 3. Decline / Cancel Request
@@ -115,14 +151,18 @@ export class FriendsService {
 
     // Ensure action is taken by sender or receiver
     if (
-      request.sender.toString() !== userId &&
-      request.receiver.toString() !== userId
+      (request.sender as Types.ObjectId).toString() !== userId &&
+      (request.receiver as Types.ObjectId).toString() !== userId
     ) {
       throw new BadRequestException('Unauthorized action.');
     }
-
     await this.friendRequestModel.findByIdAndDelete(requestId);
-    return { message: 'Friend request removed.' };
+    this.friendsGateway.declineOrCancelRequest(
+      (request.sender as Types.ObjectId).toString(),
+      (request.receiver as Types.ObjectId).toString(),
+      request._id.toString(),
+    );
+    return { requestId: request._id };
   }
 
   // 4. Remove Friend (Unfriend)
@@ -130,9 +170,18 @@ export class FriendsService {
     await this.userModel.findByIdAndUpdate(userId, {
       $pull: { friends: friendId },
     });
+
     await this.userModel.findByIdAndUpdate(friendId, {
       $pull: { friends: userId },
     });
+
+    const conversation = await this.conversationModel.findOne({
+      type: ConversationType.PRIVATE,
+      participants: { $all: [userId, friendId] },
+    });
+    if (conversation) {
+      await this.conversationModel.deleteOne({ _id: conversation._id });
+    }
 
     // Remove any historical friend request between them
     await this.friendRequestModel.deleteOne({
@@ -141,6 +190,12 @@ export class FriendsService {
         { sender: friendId, receiver: userId },
       ],
     });
+
+    this.friendsGateway.unfriend(
+      userId,
+      friendId,
+      conversation?._id.toString(),
+    );
 
     return { message: 'Friend removed successfully.' };
   }

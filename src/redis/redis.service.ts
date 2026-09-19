@@ -51,6 +51,18 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return this.client;
   }
 
+  async sAdd(key: string, members: string) {
+    return this.client.sAdd(key, members);
+  }
+
+  async sRem(key: string, members: string) {
+    return this.client.sRem(key, members);
+  }
+
+  async sMembers(key: string) {
+    return this.client.sMembers(key);
+  }
+
   // Presence management methods
   private key(userId: string) {
     return `presence:user:${userId}:connections`;

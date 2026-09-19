@@ -21,7 +21,7 @@ export class AuthService {
     private readonly otpService: OtpService,
   ) {}
   async login({ email, password }: LoginDto) {
-    const user = await this.usersService.findOne(email);
+    const user = await this.usersService.findOneForLogin(email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
     const isMatch = await argon.verify(user.passwordHash, password);
     if (!isMatch) throw new UnauthorizedException('Invalid credentials');

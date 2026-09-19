@@ -17,8 +17,8 @@ export class CreateConversationDto {
   @IsString()
   @IsOptional()
   groupAvatarUrl?: string;
-  @IsString()
-  @IsOptional()
+  // @IsArray()
+  // @IsOptional()
   admins?: string[];
   @IsArray()
   @IsNotEmpty()
@@ -26,4 +26,7 @@ export class CreateConversationDto {
   @IsString()
   @IsOptional()
   lastMessage?: string;
+  @IsString()
+  @IsOptional()
+  description?: string;
 }

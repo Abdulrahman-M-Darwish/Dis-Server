@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { Attachment } from 'nodemailer/lib/mailer';
+import { Attachment } from '../entities/message.entity';
 
 export class CreateMessageDto {
   @IsString()
@@ -16,7 +16,7 @@ export class CreateMessageDto {
   senderId!: string;
   @IsArray()
   @IsOptional()
-  attachment?: Attachment[];
+  attachments?: Attachment[];
   @IsString()
   @IsOptional()
   text?: string;
@@ -26,4 +26,8 @@ export class CreateMessageDto {
   @IsBoolean()
   @IsOptional()
   isForwarded?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isSystem?: boolean;
 }

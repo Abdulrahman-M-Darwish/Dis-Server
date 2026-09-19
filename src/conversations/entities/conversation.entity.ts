@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { Message } from 'src/messages/entities/message.entity';
 import { User } from 'src/users/entities/user.entity';
 
@@ -8,13 +8,31 @@ export enum ConversationType {
   'GROUP' = 'GROUP',
 }
 
+@Schema({ _id: false })
 export class ParticipantMetadata {
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  })
   userId!: string;
 
-  @Prop({ type: Date, default: Date.now })
-  lastReadAt!: Date;
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Message',
+    default: null,
+  })
+  lastReadMessageId!: string | null;
+
+  @Prop({ default: 0, required: true })
+  unreadCount!: number;
+
+  @Prop({ default: null })
+  clearedMessageId!: string;
 }
+
+export const participantMetadataSchema =
+  SchemaFactory.createForClass(ParticipantMetadata);
 
 @Schema({ timestamps: true })
 export class Conversation {
@@ -27,6 +45,9 @@ export class Conversation {
   groupName?: string;
 
   @Prop({ default: '' })
+  description?: string;
+
+  @Prop({ default: '' })
   groupAvatarUrl?: string;
 
   // List of all members in this conversation
@@ -36,32 +57,23 @@ export class Conversation {
   })
   participants!: User[] | string[];
 
-  // Group creators/admins (applicable only if type is 'group')
   @Prop({
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     default: [],
   })
-  admins?: User[] | string[];
+  admins?: Types.ObjectId[];
 
-  // CRUCIAL: Storing the last message ID directly in the conversation.
-  // This allows you to render the chat list view instantly without querying the entire messages collection.
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Message', default: null })
   lastMessage?: Message | string;
 
-  // CRUCIAL: Maps each user to their last read timestamp
   @Prop({
-    type: [
-      {
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-        lastReadAt: { type: Date, default: Date.now },
-      },
-    ],
+    type: [participantMetadataSchema],
+    required: true,
     default: [],
   })
-  unreadMetaData!: ParticipantMetadata[];
+  participantsMetadata!: ParticipantMetadata[];
 }
 
 export const conversationSchema = SchemaFactory.createForClass(Conversation);
 
-// Performance Index: Speeds up finding all chats a specific user is currently in.
-conversationSchema.index({ participants: 1 });
+conversationSchema.index({ participants: 1, updatedAt: -1 });

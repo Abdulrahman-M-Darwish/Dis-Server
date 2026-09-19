@@ -18,6 +18,10 @@ export class GetMessagesDto {
   conversationId!: string;
 
   @IsOptional()
+  @IsString()
+  clearedMessageId?: string;
+
+  @IsOptional()
   @Type(() => Number) // Converts the string query parameter to a number
   @IsInt()
   @Min(1)

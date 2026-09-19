@@ -41,7 +41,7 @@ export class AuthController {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     return { accessToken };
@@ -55,7 +55,7 @@ export class AuthController {
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
     });
     return { message: 'Logged out successfully' };
   }
@@ -72,7 +72,7 @@ export class AuthController {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     return { accessToken };
@@ -86,7 +86,7 @@ export class AuthController {
   @Post('verify-registration')
   async verifyOtp(@Body() signupDto: SignupDto) {
     await this.otpService.trackVerifyOtp(signupDto.email);
-    await this.otpService.verifyOtp(signupDto.otp, signupDto.email);
+    await this.otpService.verifyOtp(signupDto.otp!, signupDto.email);
     await this.usersService.create(signupDto);
 
     return { message: 'Registration verified' };

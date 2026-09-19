@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import { User } from 'src/users/entities/user.entity';
 
 export enum FriendRequestStatus {
   PENDING = 'PENDING',
@@ -12,10 +13,10 @@ export type FriendRequestDocument = FriendRequest & Document;
 @Schema({ timestamps: true })
 export class FriendRequest {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  sender!: Types.ObjectId;
+  sender!: Types.ObjectId | User;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  receiver!: Types.ObjectId;
+  receiver!: Types.ObjectId | User;
 
   @Prop({
     type: String,
@@ -23,6 +24,8 @@ export class FriendRequest {
     default: FriendRequestStatus.PENDING,
   })
   status!: FriendRequestStatus;
+
+  _id!: string;
 }
 
 export const FriendRequestSchema = SchemaFactory.createForClass(FriendRequest);

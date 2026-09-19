@@ -69,6 +69,7 @@ function generateTypes(sourceFiles: string[], outputPath: string) {
 
             // Cleanup Mongoose/Nest specific types if they cross boundaries cleanly
             if (typeStr === 'Date') typeStr = 'string | Date';
+            typeStr = typeStr.replace(/Types\.ObjectId/g, 'string');
 
             properties.push(
               `  ${propName}${isOptional ? '?' : ''}: ${typeStr};`,
