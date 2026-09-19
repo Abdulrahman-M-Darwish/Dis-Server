@@ -12,7 +12,10 @@ class RedisIoAdapter extends IoAdapter {
   async connectToRedis() {
     const pubClient = createClient(
       process.env.REDIS_URL
-        ? { url: process.env.REDIS_URL }
+        ? {
+            url: process.env.REDIS_URL,
+            socket: { tls: true, host: process.env.REDIS_HOST },
+          }
         : {
             socket: {
               host: process.env.REDIS_HOST,
