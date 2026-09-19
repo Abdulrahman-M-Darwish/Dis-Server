@@ -11,7 +11,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       process.env.REDIS_URL
         ? {
             url: process.env.REDIS_URL,
-            socket: { tls: true, host: process.env.REDIS_HOST },
+            socket: { tls: true, servername: process.env.REDIS_HOST },
           }
         : {
             socket: {
