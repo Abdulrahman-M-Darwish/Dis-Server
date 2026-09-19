@@ -33,7 +33,7 @@ export type AuthenticatedSocket = Socket<
 @UseGuards(WsJwtGuard)
 @WebSocketGateway({
   cors: {
-    origin: 'http://localhost:3000',
+    origin: process.env.ORIGIN,
     credentials: true,
   },
   pingInterval: 25_000,
