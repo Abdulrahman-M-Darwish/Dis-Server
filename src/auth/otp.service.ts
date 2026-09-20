@@ -16,19 +16,19 @@ export class OtpService implements OnModuleInit {
   constructor(private readonly redisService: RedisService) {}
 
   async onModuleInit() {
-    const port = Number(process.env.SMTP_PORT || 587);
+    const port = Number(process.env.SMTP_PORT || 465);
 
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: port,
-      secure: port === 465, // true for 465, false for 587 / other ports
+      secure: true,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
-      // Optional timeout options to prevent long hangs:
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 5000,
+      connectionTimeout: 15000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
 
     await this.transporter.verify();
