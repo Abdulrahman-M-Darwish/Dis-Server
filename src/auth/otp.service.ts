@@ -8,30 +8,14 @@ import { RedisService } from 'src/redis/redis.service';
 import path from 'path';
 import ejs from 'ejs';
 import crypto from 'crypto';
-import nodemailer, { type Transporter } from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 
 @Injectable()
 export class OtpService implements OnModuleInit {
-  private transporter!: Transporter;
   constructor(private readonly redisService: RedisService) {}
 
-  async onModuleInit() {
-    const port = Number(process.env.SMTP_PORT || 465);
-
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: port,
-      secure: true,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      connectionTimeout: 15000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
-    });
-
-    await this.transporter.verify();
+  onModuleInit() {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
   }
   renderTemplate(templateName: string, data: Record<string, string>) {
     const templatePath = path.resolve(
@@ -52,9 +36,10 @@ export class OtpService implements OnModuleInit {
   ) {
     const otp = crypto.randomBytes(3).toString('hex');
     try {
-      await this.transporter.sendMail({
-        from: `Dis Team <${process.env.SMTP_USER}>`,
+      await sgMail.send({
         to: email,
+        from: { email: 'winding192837456456@gmail.com', name: 'Dis Team' },
+        replyTo: 'winding192837456456@gmail.com',
         subject,
         html: await this.renderTemplate(templateName, { name, otp }),
       });
